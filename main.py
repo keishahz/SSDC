@@ -262,6 +262,9 @@ fig_top_cat = px.bar(
 fig_top_cat.update_traces(marker_color='royalblue', hovertemplate='%{y}: %{x}<extra></extra>')
 st.plotly_chart(fig_top_cat, use_container_width=True)
 st.caption("Kategori produk dengan total penjualan tertinggi menunjukkan fokus utama bisnis dan peluang promosi.")
+st.markdown("""
+**Solusi:** Fokuskan promosi, bundling, dan stok pada kategori produk teratas untuk memaksimalkan penjualan dan ROI. Evaluasi kategori terbawah untuk efisiensi portofolio produk.
+""")
 
 # 2. Distribusi Metode Pembayaran (⬆️ Meningkatkan penjualan, 💡 Preferensi pembeli)
 st.markdown("""
@@ -281,6 +284,9 @@ fig_pay_type = px.bar(
 )
 st.plotly_chart(fig_pay_type, use_container_width=True)
 st.caption("Metode pembayaran yang paling sering digunakan dapat menjadi acuan strategi promosi pembayaran/cicilan.")
+st.markdown("""
+**Solusi:** Tawarkan promo khusus pada metode pembayaran favorit dan edukasi pelanggan tentang opsi cicilan untuk meningkatkan konversi.
+""")
 
 # 3. Boxplot Review Score vs Ongkir (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
 st.markdown("""
@@ -298,6 +304,9 @@ fig_review_freight = px.box(
 )
 st.plotly_chart(fig_review_freight, use_container_width=True)
 st.caption("Ongkir tinggi cenderung berasosiasi dengan review lebih rendah, penting untuk strategi subsidi ongkir.")
+st.markdown("""
+**Solusi:** Terapkan subsidi ongkir atau promo gratis ongkir pada segmen sensitif harga untuk meningkatkan kepuasan dan review positif.
+""")
 
 # 4. Boxplot Review Score vs Delay (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
 st.markdown("""
@@ -315,6 +324,9 @@ fig_review_delay = px.box(
 )
 st.plotly_chart(fig_review_delay, use_container_width=True)
 st.caption("Keterlambatan pengiriman berdampak signifikan pada review buruk, perlu perbaikan logistik.")
+st.markdown("""
+**Solusi:** Optimalkan estimasi pengiriman, monitoring real-time, dan berikan kompensasi untuk order yang terlambat agar reputasi tetap terjaga.
+""")
 
 # 5. Boxplot Review Score vs Harga (😊 Kepuasan pelanggan)
 st.markdown("""
@@ -332,6 +344,9 @@ fig_review_price = px.box(
 )
 st.plotly_chart(fig_review_price, use_container_width=True)
 st.caption("Harga produk dapat memengaruhi kepuasan/review, terutama pada segmen harga tertentu.")
+st.markdown("""
+**Solusi:** Lakukan segmentasi harga dan pastikan value for money pada tiap segmen. Tawarkan promo pada produk dengan review rendah di segmen harga sensitif.
+""")
 
 # 6. Top Kategori Produk dengan Review Bagus (🎯 Produk relevan)
 st.markdown("""
@@ -350,6 +365,9 @@ fig_top_cat_good = px.bar(
 )
 st.plotly_chart(fig_top_cat_good, use_container_width=True)
 st.caption("Kategori produk dengan review bagus (4/5) terbanyak adalah peluang untuk pengembangan produk unggulan.")
+st.markdown("""
+**Solusi:** Kembangkan dan promosikan produk di kategori dengan review bagus sebagai produk unggulan dan referensi best practice kategori lain.
+""")
 
 # 7. Kota/provinsi padat pelanggan (🌍 Perluasan pasar)
 st.markdown("""
@@ -368,6 +386,9 @@ fig_city = px.bar(
 )
 st.plotly_chart(fig_city, use_container_width=True)
 st.caption("Kota/provinsi dengan pelanggan terbanyak adalah target utama ekspansi dan promosi.")
+st.markdown("""
+**Solusi:** Prioritaskan kampanye marketing dan ekspansi logistik di kota/provinsi dengan pelanggan terbanyak untuk pertumbuhan pesat.
+""")
 
 cust_state = customers["customer_state"].value_counts().head(10).reset_index()
 cust_state.columns = ["customer_state", "count"]
@@ -382,6 +403,9 @@ fig_state = px.bar(
 )
 st.plotly_chart(fig_state, use_container_width=True)
 st.caption("Provinsi dengan pelanggan terbanyak adalah target utama ekspansi dan promosi.")
+st.markdown("""
+**Solusi:** Perkuat distribusi dan layanan pelanggan di provinsi utama, serta lakukan riset pasar untuk ekspansi ke provinsi potensial berikutnya.
+""")
 
 # 8. Preferensi pembeli: Distribusi cicilan & review per metode pembayaran
 if "installments" in payments.columns:
@@ -400,6 +424,9 @@ if "installments" in payments.columns:
     )
     st.plotly_chart(fig_inst, use_container_width=True)
     st.caption("Distribusi cicilan memperlihatkan preferensi tenor pembayaran pelanggan.")
+    st.markdown("""
+    **Solusi:** Sediakan opsi cicilan yang paling diminati (misal 3/6/12x) dan edukasi pelanggan tentang manfaat cicilan untuk meningkatkan AOV.
+    """)
 
 if "order_id" in payments.columns and "order_id" in df.columns:
     st.markdown("""
@@ -418,6 +445,9 @@ if "order_id" in payments.columns and "order_id" in df.columns:
     )
     st.plotly_chart(fig_pay_review, use_container_width=True)
     st.caption("Rata-rata skor review per metode pembayaran dapat menjadi acuan strategi pembayaran yang meningkatkan kepuasan.")
+    st.markdown("""
+    **Solusi:** Dorong metode pembayaran dengan review tertinggi dan evaluasi metode dengan review rendah untuk perbaikan layanan.
+    """)
 
 # 9. Kualitas produk: Panjang deskripsi & jumlah foto vs review
 if "product_description_lenght" in df.columns:
@@ -436,6 +466,9 @@ if "product_description_lenght" in df.columns:
     )
     st.plotly_chart(fig_desc_len, use_container_width=True)
     st.caption("Produk dengan deskripsi lebih panjang cenderung mendapat review lebih baik.")
+    st.markdown("""
+    **Solusi:** Standarisasi panjang dan kualitas deskripsi produk minimal sesuai best practice untuk semua produk.
+    """)
 if "product_photos_qty" in df.columns:
     st.markdown("""
     **Insight:** Produk dengan jumlah foto lebih banyak cenderung mendapat review lebih baik.
@@ -452,3 +485,6 @@ if "product_photos_qty" in df.columns:
     )
     st.plotly_chart(fig_photo_qty, use_container_width=True)
     st.caption("Produk dengan jumlah foto lebih banyak cenderung mendapat review lebih baik.")
+    st.markdown("""
+    **Solusi:** Wajibkan minimal 3-5 foto berkualitas untuk setiap produk agar meningkatkan kepercayaan dan review positif.
+    """)
