@@ -195,13 +195,23 @@ fig_map = px.scatter_mapbox(
 )
 fig_map.update_layout(
     mapbox_style="open-street-map",
-    mapbox_zoom=3,
-    mapbox_center={"lat": -14.2350, "lon": -51.9253},  # pusat Brasil
-    margin={"r":0,"t":40,"l":0,"b":0}
+    mapbox_zoom=3.5,
+    mapbox_center={"lat": -14.2350, "lon": -51.9253},
+    margin={"r": 0, "t": 40, "l": 0, "b": 0},
+    dragmode="pan",                  # agar bisa langsung geser tanpa klik 2x
+    uirevision='map-reset',          # agar tidak reset saat interaksi
 )
-fig_map.update_layout(dragmode="pan")
-fig_map.update_traces(marker=dict(size=5, opacity=0.7, color='royalblue', line=dict(width=1, color='DarkSlateGrey')))
-st.markdown("**Peta Persebaran Pelanggan:**")
+
+# Aktifkan scroll zoom (tambahan khusus)
+fig_map.update_layout(
+    mapbox=dict(
+        accesstoken=None,
+        bearing=0,
+        pitch=0,
+        style="open-street-map"
+    )
+)
+
 st.plotly_chart(fig_map, use_container_width=True)
 
 st.markdown("""
