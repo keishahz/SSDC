@@ -181,7 +181,7 @@ geo_group = geo.groupby('geolocation_zip_code_prefix').agg({
 cust_geo = customers.merge(geo_group, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix', how='left')
 cust_geo = cust_geo.dropna(subset=['geolocation_lat', 'geolocation_lng'])
 
-# Fokus peta hanya ke Brasil
+# Map interaktif dengan zoom in/out (menggunakan plotly mapbox)
 fig_map = px.scatter_mapbox(
     cust_geo.sample(n=min(2000, len(cust_geo)), random_state=42),
     lat="geolocation_lat",
@@ -194,7 +194,12 @@ fig_map = px.scatter_mapbox(
     height=500,
     title="Persebaran Pelanggan di Brasil"
 )
-fig_map.update_layout(mapbox_style="carto-positron", margin={"r":0,"t":40,"l":0,"b":0})
+fig_map.update_layout(
+    mapbox_style="open-street-map",
+    margin={"r":0,"t":40,"l":0,"b":0},
+    mapbox_zoom=3.5,
+    mapbox_center={"lat": -14.2350, "lon": -51.9253},
+)
 st.plotly_chart(fig_map, use_container_width=True)
 
 st.markdown("""
@@ -220,65 +225,6 @@ Berdasarkan keseluruhan insight:
 
 Semua strategi ini bertujuan untuk **meningkatkan kepuasan, memperluas pasar**, dan **menaikkan konversi penjualan**.
 """)
-
-# --- Analisis Pengaruh Status Order ---
-st.subheader("📉 Analisis Order Sukses vs Gagal & Faktor Penyebab")
-
-orders = load_data("orders_dataset.csv")
-items = load_data("order_items_dataset.csv")
-
-# Gabungkan harga per order
-total_price = items.groupby("order_id")["price"].sum().reset_index()
-orders_price = orders.merge(total_price, on="order_id", how="left")
-
-# Kategorikan status: sukses vs gagal
-orders_price["order_status_group"] = orders_price["order_status"].apply(lambda x: "Sukses" if x=="delivered" else "Tidak Sukses")
-
-# 1. Distribusi harga produk per status order
-fig_status_price = px.box(
-    orders_price,
-    x="order_status_group",
-    y="price",
-    color="order_status_group",
-    points="outliers",
-    title="Distribusi Harga Produk per Status Order",
-    labels={"order_status_group": "Status Order", "price": "Total Harga per Order (R$)"}
-)
-st.plotly_chart(fig_status_price, use_container_width=True)
-
-# --- Analisis Lanjutan Order Gagal: Ongkir, Kategori, Jumlah Item ---
-st.subheader("🔎 Faktor Lain Order Gagal: Ongkir, Kategori, Jumlah Item")
-
-# Gabung ongkir per order
-total_freight = items.groupby("order_id")["freight_value"].sum().reset_index()
-orders_freight = orders.merge(total_freight, on="order_id", how="left")
-orders_freight["order_status_group"] = orders_freight["order_status"].apply(lambda x: "Sukses" if x=="delivered" else "Tidak Sukses")
-
-fig_freight = px.box(
-    orders_freight,
-    x="order_status_group",
-    y="freight_value",
-    color="order_status_group",
-    points="outliers",
-    title="Distribusi Ongkos Kirim per Status Order",
-    labels={"order_status_group": "Status Order", "freight_value": "Total Ongkir per Order (R$)"}
-)
-st.plotly_chart(fig_freight, use_container_width=True)
-
-# Jumlah item per order
-item_count = items.groupby("order_id").size().reset_index(name="item_count")
-orders_itemcount = orders.merge(item_count, on="order_id", how="left")
-orders_itemcount["order_status_group"] = orders_itemcount["order_status"].apply(lambda x: "Sukses" if x=="delivered" else "Tidak Sukses")
-fig_item = px.box(
-    orders_itemcount,
-    x="order_status_group",
-    y="item_count",
-    color="order_status_group",
-    points="outliers",
-    title="Distribusi Jumlah Item per Order berdasarkan Status",
-    labels={"order_status_group": "Status Order", "item_count": "Jumlah Item per Order"}
-)
-st.plotly_chart(fig_item, use_container_width=True)
 
 # --- Visualisasi Insight Bisnis Utama ---
 st.markdown("""
@@ -329,7 +275,20 @@ fig_review_freight = px.box(
 )
 st.plotly_chart(fig_review_freight, use_container_width=True)
 
-# 4. Boxplot Review Score vs Harga (😊 Kepuasan pelanggan)
+# 4. Boxplot Review Score vs Delay (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
+fig_review_delay = px.box(
+    merged,
+    x="review_score",
+    y="delay",
+    color="review_score",
+    category_orders={"review_score": [1,2,3,4,5]},
+    title="Keterlambatan Pengiriman per Skor Review",
+    labels={"review_score": "Skor Review", "delay": "Keterlambatan (hari)"},
+    points="outliers"
+)
+st.plotly_chart(fig_review_delay, use_container_width=True)
+
+# 5. Boxplot Review Score vs Harga (😊 Kepuasan pelanggan)
 fig_review_price = px.box(
     df,
     x="review_score",
@@ -342,7 +301,7 @@ fig_review_price = px.box(
 )
 st.plotly_chart(fig_review_price, use_container_width=True)
 
-# 5. Top Kategori Produk dengan Review Bagus (🎯 Produk relevan)
+# 6. Top Kategori Produk dengan Review Bagus (🎯 Produk relevan)
 top_cat_good_review = df[df["review_score"]>=4].groupby("product_category_name_english")["review_score"].count().sort_values(ascending=False).head(10)
 top_cat_good_review_df = top_cat_good_review.reset_index().sort_values("review_score")
 fig_top_cat_good = px.bar(
@@ -356,91 +315,7 @@ fig_top_cat_good = px.bar(
 )
 st.plotly_chart(fig_top_cat_good, use_container_width=True)
 
-# 6. Korelasi Panjang Deskripsi Produk dengan Review Score (✅ Kualitas produk, 🖼️ Optimalkan konten produk)
-if "product_description_lenght" in df.columns:
-    fig_desc_len = px.box(
-        df,
-        x="review_score",
-        y="product_description_lenght",
-        color="review_score",
-        category_orders={"review_score": [1,2,3,4,5]},
-        title="Panjang Deskripsi Produk per Skor Review",
-        labels={"review_score": "Skor Review", "product_description_lenght": "Panjang Deskripsi"},
-        points="outliers"
-    )
-    st.plotly_chart(fig_desc_len, use_container_width=True)
-
-# --- Visualisasi Insight Bisnis Berdasarkan Tabel Tujuan ---
-st.markdown("""
-### Visualisasi Insight Bisnis Sesuai Tujuan
-""")
-
-# 1. Meningkatkan penjualan: Kategori produk & metode pembayaran transaksi tertinggi
-# a. Top kategori produk berdasarkan total penjualan
-cat_sales = df.groupby("product_category_name_english")["price"].sum().sort_values(ascending=False).head(10)
-fig_cat_sales = px.bar(
-    cat_sales.reset_index(),
-    x="price",
-    y="product_category_name_english",
-    orientation='h',
-    title="Top 10 Kategori Produk dengan Penjualan Tertinggi",
-    labels={"price": "Total Penjualan (R$)", "product_category_name_english": "Kategori Produk"},
-    text_auto=True
-)
-st.plotly_chart(fig_cat_sales, use_container_width=True)
-
-# b. Metode pembayaran paling sering digunakan
-pay_count = payments["payment_type"].value_counts().reset_index()
-pay_count.columns = ["payment_type", "count"]
-fig_pay_type = px.bar(
-    pay_count,
-    x="payment_type",
-    y="count",
-    color="payment_type",
-    title="Distribusi Metode Pembayaran",
-    labels={"count": "Jumlah Transaksi", "payment_type": "Metode Pembayaran"},
-    text_auto=True
-)
-st.plotly_chart(fig_pay_type, use_container_width=True)
-
-# 2. Kepuasan pelanggan: Review buruk vs ongkir, delay, harga
-fig_review_freight = px.box(
-    df,
-    x="review_score",
-    y="freight_value",
-    color="review_score",
-    category_orders={"review_score": [1,2,3,4,5]},
-    title="Ongkir per Skor Review",
-    labels={"review_score": "Skor Review", "freight_value": "Ongkir (R$)"},
-    points="outliers"
-)
-st.plotly_chart(fig_review_freight, use_container_width=True)
-
-fig_review_delay = px.box(
-    merged,
-    x="review_score",
-    y="delay",
-    color="review_score",
-    category_orders={"review_score": [1,2,3,4,5]},
-    title="Keterlambatan Pengiriman per Skor Review",
-    labels={"review_score": "Skor Review", "delay": "Keterlambatan (hari)"},
-    points="outliers"
-)
-st.plotly_chart(fig_review_delay, use_container_width=True)
-
-fig_review_price = px.box(
-    df,
-    x="review_score",
-    y="price",
-    color="review_score",
-    category_orders={"review_score": [1,2,3,4,5]},
-    title="Harga Produk per Skor Review",
-    labels={"review_score": "Skor Review", "price": "Harga Produk (R$)"},
-    points="outliers"
-)
-st.plotly_chart(fig_review_price, use_container_width=True)
-
-# 3. Perluasan pasar: Kota/provinsi padat pelanggan
+# 7. Kota/provinsi padat pelanggan (🌍 Perluasan pasar)
 cust_city = customers["customer_city"].value_counts().head(10).reset_index()
 cust_city.columns = ["customer_city", "count"]
 fig_city = px.bar(
@@ -467,20 +342,7 @@ fig_state = px.bar(
 )
 st.plotly_chart(fig_state, use_container_width=True)
 
-# 4. Produk relevan: Kategori paling banyak dibeli & review bagus
-top_cat_good_review = df[df["review_score"]>=4].groupby("product_category_name_english")["review_score"].count().sort_values(ascending=False).head(10)
-fig_top_cat_good = px.bar(
-    top_cat_good_review.reset_index(),
-    x="review_score",
-    y="product_category_name_english",
-    orientation='h',
-    title="Top 10 Kategori Produk dengan Review Bagus",
-    labels={'review_score': 'Jumlah Review Bagus (4/5)', 'product_category_name_english': 'Kategori Produk'},
-    text_auto=True
-)
-st.plotly_chart(fig_top_cat_good, use_container_width=True)
-
-# 5. Preferensi pembeli: Distribusi cicilan & review per metode pembayaran
+# 8. Preferensi pembeli: Distribusi cicilan & review per metode pembayaran
 if "installments" in payments.columns:
     inst_count = payments["installments"].value_counts().sort_index().reset_index()
     inst_count.columns = ["installments", "count"]
@@ -494,7 +356,6 @@ if "installments" in payments.columns:
     )
     st.plotly_chart(fig_inst, use_container_width=True)
 
-# Review score per metode pembayaran
 if "order_id" in payments.columns and "order_id" in df.columns:
     pay_review = payments.merge(df[["order_id", "review_score"]], on="order_id", how="left")
     pay_review_group = pay_review.groupby("payment_type")["review_score"].mean().reset_index()
@@ -509,7 +370,7 @@ if "order_id" in payments.columns and "order_id" in df.columns:
     )
     st.plotly_chart(fig_pay_review, use_container_width=True)
 
-# 6. Kualitas produk: Panjang deskripsi & jumlah foto vs review
+# 9. Kualitas produk: Panjang deskripsi & jumlah foto vs review
 if "product_description_lenght" in df.columns:
     fig_desc_len = px.box(
         df,
