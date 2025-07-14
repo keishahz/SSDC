@@ -195,11 +195,13 @@ fig_map = px.scatter_mapbox(
 )
 fig_map.update_layout(
     mapbox_style="open-street-map",
-    margin={"r":0,"t":40,"l":0,"b":0},
-    dragmode="pan",
-    mapbox_zoom=2.5,
-    mapbox_center={"lat": -10, "lon": -50},
+    mapbox_zoom=3,
+    mapbox_center={"lat": -14.2350, "lon": -51.9253},  # pusat Brasil
+    margin={"r":0,"t":40,"l":0,"b":0}
 )
+fig_map.update_layout(dragmode="pan")
+fig_map.update_traces(marker=dict(size=5, opacity=0.7, color='royalblue', line=dict(width=1, color='DarkSlateGrey')))
+st.markdown("**Peta Persebaran Pelanggan:**")
 st.plotly_chart(fig_map, use_container_width=True)
 
 st.markdown("""
