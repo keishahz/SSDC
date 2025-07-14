@@ -56,20 +56,6 @@ fig = px.histogram(
 fig.update_traces(marker_line_color="black", marker_line_width=1)
 st.plotly_chart(fig, use_container_width=True)
 
-cicilan_df = payments["payment_installments"].value_counts().sort_index().reset_index()
-cicilan_df.columns = ["payment_installments", "count"]
-fig2 = px.bar(
-    cicilan_df,
-    x="payment_installments",
-    y="count",
-    labels={"payment_installments": "Jumlah Cicilan", "count": "Jumlah Transaksi"},
-    title="Jumlah Cicilan yang Dipilih",
-    text_auto=True,
-    hover_data={"payment_installments": True, "count": True}
-)
-fig2.update_traces(marker_color="seagreen", hovertemplate='Cicilan %{x}: %{y} transaksi<extra></extra>')
-st.plotly_chart(fig2, use_container_width=True)
-
 st.markdown("""
 **Insight:**
 - Sebagian besar transaksi dibayar tunai atau dengan cicilan ringan.
@@ -123,13 +109,11 @@ items = load_data("order_items_dataset.csv")
 products = load_data("products_dataset.csv")
 reviews = load_data("order_reviews_dataset.csv")
 prod_cat = load_data("product_category_name_translation.csv")
-customers = load_data("customers_dataset.csv")
 # Cleaning kolom
 items = clean_column_names(items)
 products = clean_column_names(products)
 reviews = clean_column_names(reviews)
 prod_cat = clean_column_names(prod_cat)
-customers = clean_column_names(customers)
 # Merge
 df = items.merge(products, on="product_id").merge(reviews, on="order_id")
 df = df.merge(prod_cat, on="product_category_name", how="left")
@@ -151,47 +135,13 @@ fig4 = px.bar(
 fig4.update_traces(marker_color='royalblue', hovertemplate='%{y}: %{x}<extra></extra>')
 st.plotly_chart(fig4, use_container_width=True)
 
-# Top 10 Kota Pelanggan (Penjualan)
-if 'customer_id' not in df.columns:
-    orders = load_data("orders_dataset.csv")
-    orders = clean_column_names(orders)
-    df = df.merge(orders[['order_id', 'customer_id']], on='order_id', how='left')
-df_cust = df.merge(customers, on="customer_id", how="left")
-price_col = 'price' if 'price' in df_cust.columns else df_cust.columns[df_cust.columns.str.contains('price')][0]
-top_city = df_cust.groupby("customer_city")[price_col].sum().sort_values(ascending=False).head(10)
-top_city_df = top_city.reset_index().sort_values(price_col)
-fig5 = px.bar(
-    top_city_df,
-    x=price_col,
-    y="customer_city",
-    orientation='h',
-    labels={price_col: 'Total Penjualan (R$)', 'customer_city': 'Kota Pelanggan'},
-    title="Top 10 Kota berdasarkan Penjualan",
-    text_auto=True,
-    hover_data={price_col: True, "customer_city": True}
-)
-fig5.update_traces(marker_color='seagreen', hovertemplate='%{y}: %{x}<extra></extra>')
-st.plotly_chart(fig5, use_container_width=True)
-
-# Review vs Berat Produk
-fig6 = px.scatter(df, x="product_weight_g", y="review_score", title="Review vs Berat Produk",
-                 labels={"product_weight_g": "Berat Produk (g)", "review_score": "Review Score"},
-                 hover_data=df.columns)
-st.plotly_chart(fig6, use_container_width=True)
-# Review vs Panjang Deskripsi
-fig7 = px.scatter(df, x="product_description_lenght", y="review_score", title="Review vs Panjang Deskripsi", 
-                 labels={"product_description_lenght": "Panjang Deskripsi", "review_score": "Review Score"},
-                 hover_data=df.columns)
-st.plotly_chart(fig7, use_container_width=True)
-
 st.markdown("""
 **Insight:**
-- Kategori dan kota tertentu mendominasi penjualan.
-- Produk lebih berat cenderung memiliki risiko review lebih rendah.
+- Kategori tertentu mendominasi penjualan.
 - Deskripsi yang lebih panjang berpotensi menaikkan kepuasan.
 
 **Rekomendasi:**
-- Fokus promosi pada kategori/kota top.
+- Fokus promosi pada kategori top.
 - Perbaiki deskripsi dan foto produk.
 - Kurasi ulang kategori berat ekstrem.
 """)
@@ -245,4 +195,35 @@ Berdasarkan keseluruhan insight:
 5. **Pasar Baru:** Promosi khusus untuk wilayah dengan penetrasi rendah namun padat penduduk.
 
 Semua strategi ini bertujuan untuk **meningkatkan kepuasan, memperluas pasar**, dan **menaikkan konversi penjualan**.
+""")
+
+# --- Analisis Pengaruh Status Order ---
+st.subheader("📉 Analisis Order Sukses vs Gagal & Faktor Penyebab")
+
+orders = load_data("orders_dataset.csv")
+items = load_data("order_items_dataset.csv")
+
+# Gabungkan harga per order
+total_price = items.groupby("order_id")["price"].sum().reset_index()
+orders_price = orders.merge(total_price, on="order_id", how="left")
+
+# Kategorikan status: sukses vs gagal
+orders_price["order_status_group"] = orders_price["order_status"].apply(lambda x: "Sukses" if x=="delivered" else "Tidak Sukses")
+
+# 1. Distribusi harga produk per status order
+fig_status_price = px.box(
+    orders_price,
+    x="order_status_group",
+    y="price",
+    color="order_status_group",
+    points="outliers",
+    title="Distribusi Harga Produk per Status Order",
+    labels={"order_status_group": "Status Order", "price": "Total Harga per Order (R$)"}
+)
+st.plotly_chart(fig_status_price, use_container_width=True)
+
+st.markdown("""
+**Insight tambahan:**
+- Order yang gagal cenderung memiliki harga lebih rendah (atau sebaliknya, bisa dilihat dari boxplot).
+- Analisis lebih lanjut bisa dilakukan dengan menambahkan jarak seller-customer jika dibutuhkan.
 """)
