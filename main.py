@@ -76,6 +76,9 @@ merged['delay'] = (pd.to_datetime(merged['order_delivered_customer_date']) -
 merged = merged.dropna(subset=['delay', 'review_score'])
 merged = merged[merged['delay'] >= 0]  # hanya ambil yang terlambat atau tepat waktu
 
+# Urutkan skor review
+review_order = [1, 2, 3, 4, 5]
+merged['review_score'] = pd.Categorical(merged['review_score'], categories=review_order, ordered=True)
 
 fig3 = px.box(
     merged,
@@ -84,6 +87,7 @@ fig3 = px.box(
     points="all",
     color="review_score",
     color_discrete_sequence=px.colors.qualitative.Set2,
+    category_orders={"review_score": review_order},
     title="Keterlambatan vs Skor Review",
     labels={"review_score": "Skor Review", "delay": "Keterlambatan (hari)"},
     hover_data=merged.columns
@@ -93,6 +97,11 @@ st.plotly_chart(fig3, use_container_width=True)
 
 corr = merged[['delay', 'review_score']].corr().iloc[0, 1]
 st.markdown(f"**Korelasi antara delay & review:** `{corr:.2f}`")
+
+# Tampilkan total order terlambat per skor review
+late_count = merged.groupby('review_score').apply(lambda x: (x['delay'] > 0).sum()).reset_index(name='Total Terlambat')
+st.markdown("**Total Order Terlambat per Skor Review:**")
+st.dataframe(late_count, hide_index=True)
 
 st.markdown("""
 **Insight:**
@@ -159,6 +168,7 @@ geo_group = geo.groupby('geolocation_zip_code_prefix').agg({
 cust_geo = customers.merge(geo_group, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix', how='left')
 cust_geo = cust_geo.dropna(subset=['geolocation_lat', 'geolocation_lng'])
 
+# Fokus peta hanya ke Brasil
 fig_map = px.scatter_mapbox(
     cust_geo.sample(n=min(2000, len(cust_geo)), random_state=42),
     lat="geolocation_lat",
@@ -167,6 +177,7 @@ fig_map = px.scatter_mapbox(
     hover_data={"customer_state": True, "customer_id": False},
     color_discrete_sequence=["royalblue"],
     zoom=3.5,
+    center={"lat": -14.2350, "lon": -51.9253},
     height=500,
     title="Persebaran Pelanggan di Brasil"
 )
