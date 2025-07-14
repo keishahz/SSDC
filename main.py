@@ -261,6 +261,7 @@ fig_top_cat = px.bar(
 )
 fig_top_cat.update_traces(marker_color='royalblue', hovertemplate='%{y}: %{x}<extra></extra>')
 st.plotly_chart(fig_top_cat, use_container_width=True)
+st.caption("Kategori produk dengan total penjualan tertinggi menunjukkan fokus utama bisnis dan peluang promosi.")
 
 # 2. Distribusi Metode Pembayaran (⬆️ Meningkatkan penjualan, 💡 Preferensi pembeli)
 st.markdown("""
@@ -279,6 +280,7 @@ fig_pay_type = px.bar(
     text_auto=True
 )
 st.plotly_chart(fig_pay_type, use_container_width=True)
+st.caption("Metode pembayaran yang paling sering digunakan dapat menjadi acuan strategi promosi pembayaran/cicilan.")
 
 # 3. Boxplot Review Score vs Ongkir (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
 st.markdown("""
@@ -295,6 +297,7 @@ fig_review_freight = px.box(
     points="outliers"
 )
 st.plotly_chart(fig_review_freight, use_container_width=True)
+st.caption("Ongkir tinggi cenderung berasosiasi dengan review lebih rendah, penting untuk strategi subsidi ongkir.")
 
 # 4. Boxplot Review Score vs Delay (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
 st.markdown("""
@@ -311,6 +314,7 @@ fig_review_delay = px.box(
     points="outliers"
 )
 st.plotly_chart(fig_review_delay, use_container_width=True)
+st.caption("Keterlambatan pengiriman berdampak signifikan pada review buruk, perlu perbaikan logistik.")
 
 # 5. Boxplot Review Score vs Harga (😊 Kepuasan pelanggan)
 st.markdown("""
@@ -327,6 +331,7 @@ fig_review_price = px.box(
     points="outliers"
 )
 st.plotly_chart(fig_review_price, use_container_width=True)
+st.caption("Harga produk dapat memengaruhi kepuasan/review, terutama pada segmen harga tertentu.")
 
 # 6. Top Kategori Produk dengan Review Bagus (🎯 Produk relevan)
 st.markdown("""
@@ -344,6 +349,7 @@ fig_top_cat_good = px.bar(
     text_auto=True
 )
 st.plotly_chart(fig_top_cat_good, use_container_width=True)
+st.caption("Kategori produk dengan review bagus (4/5) terbanyak adalah peluang untuk pengembangan produk unggulan.")
 
 # 7. Kota/provinsi padat pelanggan (🌍 Perluasan pasar)
 st.markdown("""
@@ -361,6 +367,7 @@ fig_city = px.bar(
     text_auto=True
 )
 st.plotly_chart(fig_city, use_container_width=True)
+st.caption("Kota/provinsi dengan pelanggan terbanyak adalah target utama ekspansi dan promosi.")
 
 cust_state = customers["customer_state"].value_counts().head(10).reset_index()
 cust_state.columns = ["customer_state", "count"]
@@ -374,6 +381,7 @@ fig_state = px.bar(
     text_auto=True
 )
 st.plotly_chart(fig_state, use_container_width=True)
+st.caption("Provinsi dengan pelanggan terbanyak adalah target utama ekspansi dan promosi.")
 
 # 8. Preferensi pembeli: Distribusi cicilan & review per metode pembayaran
 if "installments" in payments.columns:
@@ -391,6 +399,7 @@ if "installments" in payments.columns:
         text_auto=True
     )
     st.plotly_chart(fig_inst, use_container_width=True)
+    st.caption("Distribusi cicilan memperlihatkan preferensi tenor pembayaran pelanggan.")
 
 if "order_id" in payments.columns and "order_id" in df.columns:
     st.markdown("""
@@ -408,6 +417,7 @@ if "order_id" in payments.columns and "order_id" in df.columns:
         text_auto=True
     )
     st.plotly_chart(fig_pay_review, use_container_width=True)
+    st.caption("Rata-rata skor review per metode pembayaran dapat menjadi acuan strategi pembayaran yang meningkatkan kepuasan.")
 
 # 9. Kualitas produk: Panjang deskripsi & jumlah foto vs review
 if "product_description_lenght" in df.columns:
@@ -425,6 +435,7 @@ if "product_description_lenght" in df.columns:
         points="outliers"
     )
     st.plotly_chart(fig_desc_len, use_container_width=True)
+    st.caption("Produk dengan deskripsi lebih panjang cenderung mendapat review lebih baik.")
 if "product_photos_qty" in df.columns:
     st.markdown("""
     **Insight:** Produk dengan jumlah foto lebih banyak cenderung mendapat review lebih baik.
@@ -440,3 +451,4 @@ if "product_photos_qty" in df.columns:
         points="outliers"
     )
     st.plotly_chart(fig_photo_qty, use_container_width=True)
+    st.caption("Produk dengan jumlah foto lebih banyak cenderung mendapat review lebih baik.")
