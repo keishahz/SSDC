@@ -40,6 +40,19 @@ Dataset ini mencakup lebih dari 100.000 transaksi dari platform e-commerce Brasi
 - Mengidentifikasi pasar potensial
 """)
 
+# --- Insight Bisnis Utama Berdasarkan Dataset ---
+st.markdown("""
+#### Insight Bisnis Utama
+- **⬆️ Meningkatkan penjualan:** Analisis kategori produk, metode pembayaran, dan nilai transaksi untuk mengetahui produk/layanan dan metode pembayaran yang paling berkontribusi pada penjualan.
+- **😊 Kepuasan pelanggan:** Evaluasi pengaruh ongkir, keterlambatan, dan harga terhadap review buruk untuk meningkatkan kepuasan pelanggan.
+- **🌍 Perluasan pasar:** Identifikasi kota/provinsi dengan konsentrasi pelanggan tinggi dan wilayah yang masih kosong untuk strategi ekspansi.
+- **🎯 Produk yang lebih relevan:** Temukan kategori produk yang paling banyak dibeli dan mendapat review bagus untuk pengembangan produk.
+- **💡 Preferensi pembeli:** Analisis preferensi metode pembayaran/cicilan dan produk dengan review tinggi untuk segmentasi promosi.
+- **✅ Kualitas produk:** Tinjau pengaruh panjang deskripsi dan jumlah foto produk terhadap review untuk meningkatkan kualitas konten produk.
+- **🚚 Kinerja pengiriman:** Analisis dampak keterlambatan dan ongkir terhadap review untuk perbaikan logistik dan pengalaman belanja.
+- **🖼️ Optimalkan konten produk:** Evaluasi apakah produk dengan konten lebih lengkap (deskripsi/foto) lebih dipilih dan mendapat review bagus untuk strategi pemasaran.
+""")
+
 # --- 2. Purchase & Payment ---
 st.subheader("\U0001F4B3 Analisis Pembayaran dan Pembelian")
 payments = load_data("order_payments_dataset.csv")
@@ -266,3 +279,93 @@ fig_item = px.box(
     labels={"order_status_group": "Status Order", "item_count": "Jumlah Item per Order"}
 )
 st.plotly_chart(fig_item, use_container_width=True)
+
+# --- Insight Visualisasi Bisnis Utama ---
+st.markdown("""
+### Visualisasi Insight Bisnis Utama
+""")
+
+# 1. Top Kategori Produk Berdasarkan Penjualan (⬆️ Meningkatkan penjualan)
+top_cat_sales = df.groupby("product_category_name_english")["price"].sum().sort_values(ascending=False).head(10)
+top_cat_sales_df = top_cat_sales.reset_index().sort_values("price")
+fig_top_cat = px.bar(
+    top_cat_sales_df,
+    x="price",
+    y="product_category_name_english",
+    orientation='h',
+    labels={'price': 'Total Penjualan (R$)', 'product_category_name_english': 'Kategori Produk'},
+    title="Top 10 Kategori Produk Berdasarkan Penjualan",
+    text_auto=True,
+    hover_data={"price": True, "product_category_name_english": True}
+)
+fig_top_cat.update_traces(marker_color='royalblue', hovertemplate='%{y}: %{x}<extra></extra>')
+st.plotly_chart(fig_top_cat, use_container_width=True)
+
+# 2. Distribusi Metode Pembayaran (⬆️ Meningkatkan penjualan, 💡 Preferensi pembeli)
+payments = load_data("order_payments_dataset.csv")
+pay_type = payments["payment_type"].value_counts().reset_index()
+pay_type.columns = ["payment_type", "count"]
+fig_pay_type = px.bar(
+    pay_type,
+    x="payment_type",
+    y="count",
+    color="payment_type",
+    title="Distribusi Metode Pembayaran",
+    labels={"count": "Jumlah Transaksi", "payment_type": "Metode Pembayaran"},
+    text_auto=True
+)
+st.plotly_chart(fig_pay_type, use_container_width=True)
+
+# 3. Boxplot Review Score vs Ongkir (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
+fig_review_freight = px.box(
+    df,
+    x="review_score",
+    y="freight_value",
+    color="review_score",
+    category_orders={"review_score": [1,2,3,4,5]},
+    title="Distribusi Ongkir per Skor Review",
+    labels={"review_score": "Skor Review", "freight_value": "Ongkir (R$)"},
+    points="outliers"
+)
+st.plotly_chart(fig_review_freight, use_container_width=True)
+
+# 4. Boxplot Review Score vs Harga (😊 Kepuasan pelanggan)
+fig_review_price = px.box(
+    df,
+    x="review_score",
+    y="price",
+    color="review_score",
+    category_orders={"review_score": [1,2,3,4,5]},
+    title="Distribusi Harga Produk per Skor Review",
+    labels={"review_score": "Skor Review", "price": "Harga Produk (R$)"},
+    points="outliers"
+)
+st.plotly_chart(fig_review_price, use_container_width=True)
+
+# 5. Top Kategori Produk dengan Review Bagus (🎯 Produk relevan)
+top_cat_good_review = df[df["review_score"]>=4].groupby("product_category_name_english")["review_score"].count().sort_values(ascending=False).head(10)
+top_cat_good_review_df = top_cat_good_review.reset_index().sort_values("review_score")
+fig_top_cat_good = px.bar(
+    top_cat_good_review_df,
+    x="review_score",
+    y="product_category_name_english",
+    orientation='h',
+    labels={'review_score': 'Jumlah Review Bagus (4/5)', 'product_category_name_english': 'Kategori Produk'},
+    title="Top 10 Kategori Produk dengan Review Bagus",
+    text_auto=True
+)
+st.plotly_chart(fig_top_cat_good, use_container_width=True)
+
+# 6. Korelasi Panjang Deskripsi Produk dengan Review Score (✅ Kualitas produk, 🖼️ Optimalkan konten produk)
+if "product_description_lenght" in df.columns:
+    fig_desc_len = px.box(
+        df,
+        x="review_score",
+        y="product_description_lenght",
+        color="review_score",
+        category_orders={"review_score": [1,2,3,4,5]},
+        title="Panjang Deskripsi Produk per Skor Review",
+        labels={"review_score": "Skor Review", "product_description_lenght": "Panjang Deskripsi"},
+        points="outliers"
+    )
+    st.plotly_chart(fig_desc_len, use_container_width=True)
