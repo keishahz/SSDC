@@ -244,6 +244,9 @@ st.markdown("""
 """)
 
 # 1. Top Kategori Produk Berdasarkan Penjualan (⬆️ Meningkatkan penjualan)
+st.markdown("""
+**Insight:** Kategori produk dengan total penjualan tertinggi menunjukkan fokus utama bisnis dan peluang promosi.
+""")
 top_cat_sales = df.groupby("product_category_name_english")["price"].sum().sort_values(ascending=False).head(10)
 top_cat_sales_df = top_cat_sales.reset_index().sort_values("price")
 fig_top_cat = px.bar(
@@ -260,6 +263,9 @@ fig_top_cat.update_traces(marker_color='royalblue', hovertemplate='%{y}: %{x}<ex
 st.plotly_chart(fig_top_cat, use_container_width=True)
 
 # 2. Distribusi Metode Pembayaran (⬆️ Meningkatkan penjualan, 💡 Preferensi pembeli)
+st.markdown("""
+**Insight:** Metode pembayaran yang paling sering digunakan dapat menjadi acuan strategi promosi pembayaran/cicilan.
+""")
 payments = load_data("order_payments_dataset.csv")
 pay_type = payments["payment_type"].value_counts().reset_index()
 pay_type.columns = ["payment_type", "count"]
@@ -275,6 +281,9 @@ fig_pay_type = px.bar(
 st.plotly_chart(fig_pay_type, use_container_width=True)
 
 # 3. Boxplot Review Score vs Ongkir (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
+st.markdown("""
+**Insight:** Ongkir tinggi cenderung berasosiasi dengan review lebih rendah, penting untuk strategi subsidi ongkir.
+""")
 fig_review_freight = px.box(
     df,
     x="review_score",
@@ -288,6 +297,9 @@ fig_review_freight = px.box(
 st.plotly_chart(fig_review_freight, use_container_width=True)
 
 # 4. Boxplot Review Score vs Delay (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
+st.markdown("""
+**Insight:** Keterlambatan pengiriman berdampak signifikan pada review buruk, perlu perbaikan logistik.
+""")
 fig_review_delay = px.box(
     merged,
     x="review_score",
@@ -301,6 +313,9 @@ fig_review_delay = px.box(
 st.plotly_chart(fig_review_delay, use_container_width=True)
 
 # 5. Boxplot Review Score vs Harga (😊 Kepuasan pelanggan)
+st.markdown("""
+**Insight:** Harga produk dapat memengaruhi kepuasan/review, terutama pada segmen harga tertentu.
+""")
 fig_review_price = px.box(
     df,
     x="review_score",
@@ -314,6 +329,9 @@ fig_review_price = px.box(
 st.plotly_chart(fig_review_price, use_container_width=True)
 
 # 6. Top Kategori Produk dengan Review Bagus (🎯 Produk relevan)
+st.markdown("""
+**Insight:** Kategori produk dengan review bagus (4/5) terbanyak adalah peluang untuk pengembangan produk unggulan.
+""")
 top_cat_good_review = df[df["review_score"]>=4].groupby("product_category_name_english")["review_score"].count().sort_values(ascending=False).head(10)
 top_cat_good_review_df = top_cat_good_review.reset_index().sort_values("review_score")
 fig_top_cat_good = px.bar(
@@ -328,6 +346,9 @@ fig_top_cat_good = px.bar(
 st.plotly_chart(fig_top_cat_good, use_container_width=True)
 
 # 7. Kota/provinsi padat pelanggan (🌍 Perluasan pasar)
+st.markdown("""
+**Insight:** Kota/provinsi dengan pelanggan terbanyak adalah target utama ekspansi dan promosi.
+""")
 cust_city = customers["customer_city"].value_counts().head(10).reset_index()
 cust_city.columns = ["customer_city", "count"]
 fig_city = px.bar(
@@ -356,6 +377,9 @@ st.plotly_chart(fig_state, use_container_width=True)
 
 # 8. Preferensi pembeli: Distribusi cicilan & review per metode pembayaran
 if "installments" in payments.columns:
+    st.markdown("""
+    **Insight:** Distribusi cicilan memperlihatkan preferensi tenor pembayaran pelanggan.
+    """)
     inst_count = payments["installments"].value_counts().sort_index().reset_index()
     inst_count.columns = ["installments", "count"]
     fig_inst = px.bar(
@@ -369,6 +393,9 @@ if "installments" in payments.columns:
     st.plotly_chart(fig_inst, use_container_width=True)
 
 if "order_id" in payments.columns and "order_id" in df.columns:
+    st.markdown("""
+    **Insight:** Rata-rata skor review per metode pembayaran dapat menjadi acuan strategi pembayaran yang meningkatkan kepuasan.
+    """)
     pay_review = payments.merge(df[["order_id", "review_score"]], on="order_id", how="left")
     pay_review_group = pay_review.groupby("payment_type")["review_score"].mean().reset_index()
     fig_pay_review = px.bar(
@@ -384,6 +411,9 @@ if "order_id" in payments.columns and "order_id" in df.columns:
 
 # 9. Kualitas produk: Panjang deskripsi & jumlah foto vs review
 if "product_description_lenght" in df.columns:
+    st.markdown("""
+    **Insight:** Produk dengan deskripsi lebih panjang cenderung mendapat review lebih baik.
+    """)
     fig_desc_len = px.box(
         df,
         x="review_score",
@@ -396,6 +426,9 @@ if "product_description_lenght" in df.columns:
     )
     st.plotly_chart(fig_desc_len, use_container_width=True)
 if "product_photos_qty" in df.columns:
+    st.markdown("""
+    **Insight:** Produk dengan jumlah foto lebih banyak cenderung mendapat review lebih baik.
+    """)
     fig_photo_qty = px.box(
         df,
         x="review_score",
