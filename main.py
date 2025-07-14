@@ -280,7 +280,7 @@ fig_item = px.box(
 )
 st.plotly_chart(fig_item, use_container_width=True)
 
-# --- Insight Visualisasi Bisnis Utama ---
+# --- Visualisasi Insight Bisnis Utama ---
 st.markdown("""
 ### Visualisasi Insight Bisnis Utama
 """)
@@ -369,3 +369,168 @@ if "product_description_lenght" in df.columns:
         points="outliers"
     )
     st.plotly_chart(fig_desc_len, use_container_width=True)
+
+# --- Visualisasi Insight Bisnis Berdasarkan Tabel Tujuan ---
+st.markdown("""
+### Visualisasi Insight Bisnis Sesuai Tujuan
+""")
+
+# 1. Meningkatkan penjualan: Kategori produk & metode pembayaran transaksi tertinggi
+# a. Top kategori produk berdasarkan total penjualan
+cat_sales = df.groupby("product_category_name_english")["price"].sum().sort_values(ascending=False).head(10)
+fig_cat_sales = px.bar(
+    cat_sales.reset_index(),
+    x="price",
+    y="product_category_name_english",
+    orientation='h',
+    title="Top 10 Kategori Produk dengan Penjualan Tertinggi",
+    labels={"price": "Total Penjualan (R$)", "product_category_name_english": "Kategori Produk"},
+    text_auto=True
+)
+st.plotly_chart(fig_cat_sales, use_container_width=True)
+
+# b. Metode pembayaran paling sering digunakan
+pay_count = payments["payment_type"].value_counts().reset_index()
+pay_count.columns = ["payment_type", "count"]
+fig_pay_type = px.bar(
+    pay_count,
+    x="payment_type",
+    y="count",
+    color="payment_type",
+    title="Distribusi Metode Pembayaran",
+    labels={"count": "Jumlah Transaksi", "payment_type": "Metode Pembayaran"},
+    text_auto=True
+)
+st.plotly_chart(fig_pay_type, use_container_width=True)
+
+# 2. Kepuasan pelanggan: Review buruk vs ongkir, delay, harga
+fig_review_freight = px.box(
+    df,
+    x="review_score",
+    y="freight_value",
+    color="review_score",
+    category_orders={"review_score": [1,2,3,4,5]},
+    title="Ongkir per Skor Review",
+    labels={"review_score": "Skor Review", "freight_value": "Ongkir (R$)"},
+    points="outliers"
+)
+st.plotly_chart(fig_review_freight, use_container_width=True)
+
+fig_review_delay = px.box(
+    merged,
+    x="review_score",
+    y="delay",
+    color="review_score",
+    category_orders={"review_score": [1,2,3,4,5]},
+    title="Keterlambatan Pengiriman per Skor Review",
+    labels={"review_score": "Skor Review", "delay": "Keterlambatan (hari)"},
+    points="outliers"
+)
+st.plotly_chart(fig_review_delay, use_container_width=True)
+
+fig_review_price = px.box(
+    df,
+    x="review_score",
+    y="price",
+    color="review_score",
+    category_orders={"review_score": [1,2,3,4,5]},
+    title="Harga Produk per Skor Review",
+    labels={"review_score": "Skor Review", "price": "Harga Produk (R$)"},
+    points="outliers"
+)
+st.plotly_chart(fig_review_price, use_container_width=True)
+
+# 3. Perluasan pasar: Kota/provinsi padat pelanggan
+cust_city = customers["customer_city"].value_counts().head(10).reset_index()
+cust_city.columns = ["customer_city", "count"]
+fig_city = px.bar(
+    cust_city,
+    x="count",
+    y="customer_city",
+    orientation='h',
+    title="Top 10 Kota dengan Jumlah Pelanggan Terbanyak",
+    labels={"count": "Jumlah Pelanggan", "customer_city": "Kota"},
+    text_auto=True
+)
+st.plotly_chart(fig_city, use_container_width=True)
+
+cust_state = customers["customer_state"].value_counts().head(10).reset_index()
+cust_state.columns = ["customer_state", "count"]
+fig_state = px.bar(
+    cust_state,
+    x="count",
+    y="customer_state",
+    orientation='h',
+    title="Top 10 Provinsi dengan Jumlah Pelanggan Terbanyak",
+    labels={"count": "Jumlah Pelanggan", "customer_state": "Provinsi"},
+    text_auto=True
+)
+st.plotly_chart(fig_state, use_container_width=True)
+
+# 4. Produk relevan: Kategori paling banyak dibeli & review bagus
+top_cat_good_review = df[df["review_score"]>=4].groupby("product_category_name_english")["review_score"].count().sort_values(ascending=False).head(10)
+fig_top_cat_good = px.bar(
+    top_cat_good_review.reset_index(),
+    x="review_score",
+    y="product_category_name_english",
+    orientation='h',
+    title="Top 10 Kategori Produk dengan Review Bagus",
+    labels={'review_score': 'Jumlah Review Bagus (4/5)', 'product_category_name_english': 'Kategori Produk'},
+    text_auto=True
+)
+st.plotly_chart(fig_top_cat_good, use_container_width=True)
+
+# 5. Preferensi pembeli: Distribusi cicilan & review per metode pembayaran
+if "installments" in payments.columns:
+    inst_count = payments["installments"].value_counts().sort_index().reset_index()
+    inst_count.columns = ["installments", "count"]
+    fig_inst = px.bar(
+        inst_count,
+        x="installments",
+        y="count",
+        title="Distribusi Jumlah Cicilan",
+        labels={"count": "Jumlah Transaksi", "installments": "Jumlah Cicilan"},
+        text_auto=True
+    )
+    st.plotly_chart(fig_inst, use_container_width=True)
+
+# Review score per metode pembayaran
+if "order_id" in payments.columns and "order_id" in df.columns:
+    pay_review = payments.merge(df[["order_id", "review_score"]], on="order_id", how="left")
+    pay_review_group = pay_review.groupby("payment_type")["review_score"].mean().reset_index()
+    fig_pay_review = px.bar(
+        pay_review_group,
+        x="payment_type",
+        y="review_score",
+        color="payment_type",
+        title="Rata-rata Skor Review per Metode Pembayaran",
+        labels={"review_score": "Rata-rata Skor Review", "payment_type": "Metode Pembayaran"},
+        text_auto=True
+    )
+    st.plotly_chart(fig_pay_review, use_container_width=True)
+
+# 6. Kualitas produk: Panjang deskripsi & jumlah foto vs review
+if "product_description_lenght" in df.columns:
+    fig_desc_len = px.box(
+        df,
+        x="review_score",
+        y="product_description_lenght",
+        color="review_score",
+        category_orders={"review_score": [1,2,3,4,5]},
+        title="Panjang Deskripsi Produk per Skor Review",
+        labels={"review_score": "Skor Review", "product_description_lenght": "Panjang Deskripsi"},
+        points="outliers"
+    )
+    st.plotly_chart(fig_desc_len, use_container_width=True)
+if "product_photos_qty" in df.columns:
+    fig_photo_qty = px.box(
+        df,
+        x="review_score",
+        y="product_photos_qty",
+        color="review_score",
+        category_orders={"review_score": [1,2,3,4,5]},
+        title="Jumlah Foto Produk per Skor Review",
+        labels={"review_score": "Skor Review", "product_photos_qty": "Jumlah Foto"},
+        points="outliers"
+    )
+    st.plotly_chart(fig_photo_qty, use_container_width=True)
