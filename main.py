@@ -274,3 +274,44 @@ st.markdown("""
 - Cek apakah ongkir tinggi, jumlah item, atau produk tertentu lebih sering muncul pada order gagal.
 - Jika tidak ada pola signifikan, kemungkinan faktor eksternal (stok, pembayaran, dsb).
 """)
+
+# Analisis detail Top 10 Produk pada Order Gagal
+products = load_data("products_dataset.csv")
+prod_cat = load_data("product_category_name_translation.csv")
+reviews = load_data("order_reviews_dataset.csv")
+
+# Ambil 10 produk gagal teratas
+fail_top10 = cat_fail.index.tolist()
+produk_gagal = products[products["product_id"].isin(fail_top10)]
+produk_gagal = produk_gagal.merge(prod_cat, on="product_category_name", how="left")
+
+# Rata-rata ongkir, berat, review produk gagal vs produk lain
+gagal_items = items[items["product_id"].isin(fail_top10)]
+other_items = items[~items["product_id"].isin(fail_top10)]
+
+avg_freight_gagal = gagal_items["freight_value"].mean()
+avg_freight_other = other_items["freight_value"].mean()
+avg_weight_gagal = produk_gagal["product_weight_g"].mean()
+avg_weight_other = products[~products["product_id"].isin(fail_top10)]["product_weight_g"].mean()
+
+# Review produk gagal
+gagal_reviews = df[df["product_id"].isin(fail_top10)]["review_score"].mean()
+other_reviews = df[~df["product_id"].isin(fail_top10)]["review_score"].mean()
+
+# Seller unik per produk gagal
+gagal_seller = gagal_items.groupby("product_id")["seller_id"].nunique()
+
+st.markdown("**Analisis Faktor Produk Top Cancel:**")
+st.write("Rata-rata ongkir produk gagal: %.2f | produk lain: %.2f" % (avg_freight_gagal, avg_freight_other))
+st.write("Rata-rata berat produk gagal: %.2f g | produk lain: %.2f g" % (avg_weight_gagal, avg_weight_other))
+st.write("Rata-rata review produk gagal: %.2f | produk lain: %.2f" % (gagal_reviews, other_reviews))
+st.write("Jumlah seller unik per produk gagal:")
+st.write(gagal_seller)
+
+st.markdown("""
+**Insight produk gagal:**
+- Jika ongkir/berat lebih tinggi, kemungkinan pembatalan karena biaya kirim/logistik.
+- Jika review lebih rendah, kemungkinan produk kurang memuaskan.
+- Jika seller sedikit, bisa jadi masalah stok/distribusi.
+- Jika tidak ada pola menonjol, kemungkinan faktor eksternal (fraud, pembayaran, dsb).
+""")
