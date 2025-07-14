@@ -222,12 +222,6 @@ fig_status_price = px.box(
 )
 st.plotly_chart(fig_status_price, use_container_width=True)
 
-st.markdown("""
-**Insight tambahan:**
-- Order yang gagal cenderung memiliki harga lebih rendah (atau sebaliknya, bisa dilihat dari boxplot).
-- Analisis lebih lanjut bisa dilakukan dengan menambahkan jarak seller-customer jika dibutuhkan.
-""")
-
 # --- Analisis Lanjutan Order Gagal: Ongkir, Kategori, Jumlah Item ---
 st.subheader("🔎 Faktor Lain Order Gagal: Ongkir, Kategori, Jumlah Item")
 
@@ -261,9 +255,3 @@ fig_item = px.box(
     labels={"order_status_group": "Status Order", "item_count": "Jumlah Item per Order"}
 )
 st.plotly_chart(fig_item, use_container_width=True)
-
-st.markdown("""
-**Insight tambahan:**
-- Cek apakah ongkir tinggi, jumlah item, atau produk tertentu lebih sering muncul pada order gagal.
-- Jika tidak ada pola signifikan, kemungkinan faktor eksternal (stok, pembayaran, dsb).
-""")
