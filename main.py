@@ -227,3 +227,50 @@ st.markdown("""
 - Order yang gagal cenderung memiliki harga lebih rendah (atau sebaliknya, bisa dilihat dari boxplot).
 - Analisis lebih lanjut bisa dilakukan dengan menambahkan jarak seller-customer jika dibutuhkan.
 """)
+
+# --- Analisis Lanjutan Order Gagal: Ongkir, Kategori, Jumlah Item ---
+st.subheader("🔎 Faktor Lain Order Gagal: Ongkir, Kategori, Jumlah Item")
+
+# Gabung ongkir per order
+total_freight = items.groupby("order_id")["freight_value"].sum().reset_index()
+orders_freight = orders.merge(total_freight, on="order_id", how="left")
+orders_freight["order_status_group"] = orders_freight["order_status"].apply(lambda x: "Sukses" if x=="delivered" else "Tidak Sukses")
+
+fig_freight = px.box(
+    orders_freight,
+    x="order_status_group",
+    y="freight_value",
+    color="order_status_group",
+    points="outliers",
+    title="Distribusi Ongkos Kirim per Status Order",
+    labels={"order_status_group": "Status Order", "freight_value": "Total Ongkir per Order (R$)"}
+)
+st.plotly_chart(fig_freight, use_container_width=True)
+
+# Kategori produk pada order gagal
+items_status = items.merge(orders[["order_id", "order_status"]], on="order_id", how="left")
+items_status["order_status_group"] = items_status["order_status"].apply(lambda x: "Sukses" if x=="delivered" else "Tidak Sukses")
+cat_fail = items_status[items_status["order_status_group"]=="Tidak Sukses"]["product_id"].value_counts().head(10)
+st.markdown("**Top 10 Produk pada Order Gagal:**")
+st.write(cat_fail)
+
+# Jumlah item per order
+item_count = items.groupby("order_id").size().reset_index(name="item_count")
+orders_itemcount = orders.merge(item_count, on="order_id", how="left")
+orders_itemcount["order_status_group"] = orders_itemcount["order_status"].apply(lambda x: "Sukses" if x=="delivered" else "Tidak Sukses")
+fig_item = px.box(
+    orders_itemcount,
+    x="order_status_group",
+    y="item_count",
+    color="order_status_group",
+    points="outliers",
+    title="Distribusi Jumlah Item per Order berdasarkan Status",
+    labels={"order_status_group": "Status Order", "item_count": "Jumlah Item per Order"}
+)
+st.plotly_chart(fig_item, use_container_width=True)
+
+st.markdown("""
+**Insight tambahan:**
+- Cek apakah ongkir tinggi, jumlah item, atau produk tertentu lebih sering muncul pada order gagal.
+- Jika tidak ada pola signifikan, kemungkinan faktor eksternal (stok, pembayaran, dsb).
+""")
