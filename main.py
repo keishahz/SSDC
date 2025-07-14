@@ -88,6 +88,8 @@ merged = orders.merge(reviews, on="order_id")
 merged['delay'] = (pd.to_datetime(merged['order_delivered_customer_date']) -
                    pd.to_datetime(merged['order_estimated_delivery_date'])).dt.days
 merged = merged.dropna(subset=['delay', 'review_score'])
+merged = merged[merged['delay'] >= 0]  # hanya ambil yang terlambat atau tepat waktu
+
 
 fig3 = px.box(
     merged,
