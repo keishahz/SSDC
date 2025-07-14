@@ -181,7 +181,6 @@ geo_group = geo.groupby('geolocation_zip_code_prefix').agg({
 cust_geo = customers.merge(geo_group, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix', how='left')
 cust_geo = cust_geo.dropna(subset=['geolocation_lat', 'geolocation_lng'])
 
-# Map interaktif dengan zoom in/out (menggunakan plotly mapbox)
 fig_map = px.scatter_mapbox(
     cust_geo.sample(n=min(2000, len(cust_geo)), random_state=42),
     lat="geolocation_lat",
@@ -190,16 +189,10 @@ fig_map = px.scatter_mapbox(
     hover_data={"customer_state": True, "customer_id": False},
     color_discrete_sequence=["royalblue"],
     zoom=3.5,
-    center={"lat": -14.2350, "lon": -51.9253},
     height=500,
     title="Persebaran Pelanggan di Brasil"
 )
-fig_map.update_layout(
-    mapbox_style="open-street-map",
-    margin={"r":0,"t":40,"l":0,"b":0},
-    mapbox_zoom=3.5,
-    mapbox_center={"lat": -14.2350, "lon": -51.9253},
-)
+fig_map.update_layout(mapbox_style="carto-positron", margin={"r":0,"t":40,"l":0,"b":0})
 st.plotly_chart(fig_map, use_container_width=True)
 
 st.markdown("""
