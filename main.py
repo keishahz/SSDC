@@ -169,42 +169,6 @@ st.markdown("""
 """)
 
 # --- 5. Market Geography ---
-elif page == "5. Market Geography":
-    st.subheader("\U0001F5FA\uFE0F Persebaran Pelanggan")
-    customers = load_data("customers_dataset.csv")
-    geo = load_data("geolocation_dataset.csv")
-
-    geo_group = geo.groupby('geolocation_zip_code_prefix').agg({
-        'geolocation_lat': 'mean',
-        'geolocation_lng': 'mean'
-    }).reset_index()
-
-    cust_geo = customers.merge(geo_group, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix', how='left')
-    cust_geo = cust_geo.dropna(subset=['geolocation_lat', 'geolocation_lng'])
-
-    fig_map = px.scatter_mapbox(
-        cust_geo.sample(n=min(2000, len(cust_geo)), random_state=42),
-        lat="geolocation_lat",
-        lon="geolocation_lng",
-        hover_name="customer_city",
-        hover_data={"customer_state": True, "customer_id": False},
-        color_discrete_sequence=["royalblue"],
-        zoom=3.5,
-        height=500,
-        title="Persebaran Pelanggan di Brasil"
-    )
-    fig_map.update_layout(mapbox_style="carto-positron", margin={"r":0,"t":40,"l":0,"b":0})
-    st.plotly_chart(fig_map, use_container_width=True)
-
-    st.markdown("""
-    **Insight:**
-    - Sebaran pelanggan terkonsentrasi di wilayah perkotaan besar.
-    - Wilayah tertentu menunjukkan potensi pertumbuhan.
-
-    **Rekomendasi:**
-    - Target promosi wilayah padat.
-    - Eksplorasi wilayah dengan penetrasi rendah.
-    """)
 st.subheader("\U0001F5FA\uFE0F Persebaran Pelanggan")
 customers = load_data("customers_dataset.csv")
 geo = load_data("geolocation_dataset.csv")
@@ -217,6 +181,7 @@ geo_group = geo.groupby('geolocation_zip_code_prefix').agg({
 cust_geo = customers.merge(geo_group, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix', how='left')
 cust_geo = cust_geo.dropna(subset=['geolocation_lat', 'geolocation_lng'])
 
+# Map interaktif seluruh dunia (zoom, pan, drag bebas)
 fig_map = px.scatter_mapbox(
     cust_geo.sample(n=min(2000, len(cust_geo)), random_state=42),
     lat="geolocation_lat",
@@ -224,11 +189,17 @@ fig_map = px.scatter_mapbox(
     hover_name="customer_city",
     hover_data={"customer_state": True, "customer_id": False},
     color_discrete_sequence=["royalblue"],
-    zoom=3.5,
+    zoom=2.5,  # Lebih global
     height=500,
-    title="Persebaran Pelanggan di Brasil"
+    title="Persebaran Pelanggan di Dunia (Interaktif)"
 )
-fig_map.update_layout(mapbox_style="carto-positron", margin={"r":0,"t":40,"l":0,"b":0})
+fig_map.update_layout(
+    mapbox_style="open-street-map",
+    margin={"r":0,"t":40,"l":0,"b":0},
+    dragmode="pan",
+    mapbox_zoom=2.5,
+    mapbox_center={"lat": -10, "lon": -50},
+)
 st.plotly_chart(fig_map, use_container_width=True)
 
 st.markdown("""
