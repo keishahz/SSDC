@@ -195,20 +195,21 @@ fig_map = px.scatter_mapbox(
 )
 fig_map.update_layout(
     mapbox_style="open-street-map",
-    mapbox_zoom=3.5,
+    mapbox_zoom=3,
     mapbox_center={"lat": -14.2350, "lon": -51.9253},
+    dragmode="pan",  # bisa langsung drag tanpa klik dua kali
     margin={"r": 0, "t": 40, "l": 0, "b": 0},
-    dragmode="pan",                  # agar bisa langsung geser tanpa klik 2x
-    uirevision='map-reset',          # agar tidak reset saat interaksi
+    uirevision='keep-map'  # biar map nggak reset saat interaksi
 )
 
-# Aktifkan scroll zoom (tambahan khusus)
+# Aktifkan scroll zoom
 fig_map.update_layout(
+    clickmode='event+select',
     mapbox=dict(
         accesstoken=None,
-        bearing=0,
-        pitch=0,
-        style="open-street-map"
+        style="open-street-map",
+        zoom=3,
+        center=dict(lat=-14.2350, lon=-51.9253)
     )
 )
 
