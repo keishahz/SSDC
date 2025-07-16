@@ -6,6 +6,7 @@ import pydeck as pdk
 import os
 from utils import clean_column_names, drop_missing, plot_bar_top, plot_scatter
 import plotly.express as px
+import numpy as np
 
 # --- Page Setup ---
 st.set_page_config(page_title="SSDC 2025 E-Commerce Dashboard", layout="wide")
@@ -311,6 +312,229 @@ st.markdown("""
 
 # 4. Boxplot Review Score vs Delay (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
 st.markdown("""
+<<<<<<< HEAD
+=======
+**Insight:** Keterlambatan pengiriman berdampak signifikan pada review buruk, namun ada sebagian order telat yang tetap mendapat review bagus. Analisis lebih lanjut diperlukan.
+""")
+# Normalisasi delay (log1p agar tidak bias outlier)
+merged['delay_log'] = (merged['delay']+1).apply(np.log1p)
+fig_review_delay = px.box(
+    merged,
+    x="review_score",
+    y="delay_log",
+    color="review_score",
+    category_orders={"review_score": [1,2,3,4,5]},
+    title="Keterlambatan (Log) per Skor Review",
+    labels={"review_score": "Skor Review", "delay_log": "Log(1+Delay)"},
+    points="outliers"
+)
+st.plotly_chart(fig_review_delay, use_container_width=True)
+st.caption("Boxplot delay dinormalisasi (log) agar distribusi lebih representatif. Masih ada order telat yang review-nya tetap bagus.")
+st.markdown("""
+**Solusi:** Optimalkan estimasi pengiriman, monitoring real-time, dan berikan kompensasi untuk order yang terlambat agar reputasi tetap terjaga.
+""")
+
+# --- Analisis Order Telat Tapi Review Bagus ---
+st.markdown("""
+#### Analisis Order Telat Tapi Review Bagus
+Kenapa ada order telat lama tapi review tetap bagus? Apakah karena harga, kategori, atau kualitas produk?
+""")
+# Ambil threshold delay tinggi (misal, >90th percentile)
+delay_thr = merged['delay'].quantile(0.9)
+late_good = merged[(merged['delay'] > delay_thr) & (merged['review_score'] >= 4)]
+late_bad = merged[(merged['delay'] > delay_thr) & (merged['review_score'] <= 3)]
+
+# Gabungkan dengan data produk (df) untuk analisis lebih lanjut
+late_good_prod = late_good.merge(df[['order_id','price','product_category_name_english','product_description_lenght','product_photos_qty']], on='order_id', how='left')
+late_bad_prod = late_bad.merge(df[['order_id','price','product_category_name_english','product_description_lenght','product_photos_qty']], on='order_id', how='left')
+
+colA, colB = st.columns(2)
+with colA:
+    st.markdown("**Order Telat + Review Bagus (4/5):**")
+    st.write(f"Jumlah: {len(late_good_prod)}")
+    st.write("Rata-rata harga:", f"{late_good_prod['price'].mean():.2f}")
+    st.write("Rata-rata panjang deskripsi:", f"{late_good_prod['product_description_lenght'].mean():.0f}")
+    st.write("Rata-rata jumlah foto:", f"{late_good_prod['product_photos_qty'].mean():.2f}")
+    top_cat_good = late_good_prod['product_category_name_english'].value_counts().head(3)
+    st.write("Top kategori:", ', '.join(top_cat_good.index))
+with colB:
+    st.markdown("**Order Telat + Review Jelek (1-3):**")
+    st.write(f"Jumlah: {len(late_bad_prod)}")
+    st.write("Rata-rata harga:", f"{late_bad_prod['price'].mean():.2f}")
+    st.write("Rata-rata panjang deskripsi:", f"{late_bad_prod['product_description_lenght'].mean():.0f}")
+    st.write("Rata-rata jumlah foto:", f"{late_bad_prod['product_photos_qty'].mean():.2f}")
+    top_cat_bad = late_bad_prod['product_category_name_english'].value_counts().head(3)
+    st.write("Top kategori:", ', '.join(top_cat_bad.index))
+
+# Visualisasi perbandingan harga/deskripsi/foto
+st.markdown("**Distribusi Harga Order Telat (Review Bagus vs Jelek):**")
+import plotly.graph_objects as go
+fig_late_price = go.Figure()
+fig_late_price.add_trace(go.Box(y=late_good_prod['price'], name='Review Bagus', marker_color='#1a237e'))
+fig_late_price.add_trace(go.Box(y=late_bad_prod['price'], name='Review Jelek', marker_color='#ff9800'))
+fig_late_price.update_layout(yaxis_title='Harga Produk (R$)')
+st.plotly_chart(fig_late_price, use_container_width=True)
+
+st.markdown("**Distribusi Panjang Deskripsi Order Telat (Review Bagus vs Jelek):**")
+fig_late_desc = go.Figure()
+fig_late_desc.add_trace(go.Box(y=late_good_prod['product_description_lenght'], name='Review Bagus', marker_color='#1a237e'))
+fig_late_desc.add_trace(go.Box(y=late_bad_prod['product_description_lenght'], name='Review Jelek', marker_color='#ff9800'))
+fig_late_desc.update_layout(yaxis_title='Panjang Deskripsi Produk')
+st.plotly_chart(fig_late_desc, use_container_width=True)
+
+st.markdown("**Distribusi Jumlah Foto Order Telat (Review Bagus vs Jelek):**")
+fig_late_photo = go.Figure()
+fig_late_photo.add_trace(go.Box(y=late_good_prod['product_photos_qty'], name='Review Bagus', marker_color='#1a237e'))
+fig_late_photo.add_trace(go.Box(y=late_bad_prod['product_photos_qty'], name='Review Jelek', marker_color='#ff9800'))
+fig_late_photo.update_layout(yaxis_title='Jumlah Foto Produk')
+st.plotly_chart(fig_late_photo, use_container_width=True)
+
+st.caption("Order telat yang tetap mendapat review bagus cenderung memiliki harga lebih tinggi, deskripsi/foto lebih baik, dan kategori tertentu. Artinya, kualitas produk bisa mengkompensasi keterlambatan.")
+
+# --- 5. Market Geography ---
+st.subheader("\U0001F5FA\uFE0F Persebaran Pelanggan")
+customers = load_data("customers_dataset.csv")
+geo = load_data("geolocation_dataset.csv")
+
+geo_group = geo.groupby('geolocation_zip_code_prefix').agg({
+    'geolocation_lat': 'mean',
+    'geolocation_lng': 'mean'
+}).reset_index()
+
+cust_geo = customers.merge(geo_group, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix', how='left')
+cust_geo = cust_geo.dropna(subset=['geolocation_lat', 'geolocation_lng'])
+
+# Map interaktif seluruh dunia (zoom, pan, drag bebas)
+fig_map = px.scatter_mapbox(
+    cust_geo.sample(n=min(2000, len(cust_geo)), random_state=42),
+    lat="geolocation_lat",
+    lon="geolocation_lng",
+    hover_name="customer_city",
+    hover_data={"customer_state": True, "customer_id": False},
+    color_discrete_sequence=["royalblue"],
+    zoom=2.5,  # Lebih global
+    height=500,
+    title="Persebaran Pelanggan di Dunia (Interaktif)"
+)
+fig_map.update_layout(
+    mapbox_style="open-street-map",
+    mapbox_zoom=3,
+    mapbox_center={"lat": -14.2350, "lon": -51.9253},
+    dragmode="pan",  # bisa langsung drag tanpa klik dua kali
+    margin={"r": 0, "t": 40, "l": 0, "b": 0},
+    uirevision='keep-map'  # biar map nggak reset saat interaksi
+)
+
+# Aktifkan scroll zoom
+fig_map.update_layout(
+    clickmode='event+select',
+    mapbox=dict(
+        accesstoken=None,
+        style="open-street-map",
+        zoom=3,
+        center=dict(lat=-14.2350, lon=-51.9253)
+    )
+)
+
+st.plotly_chart(fig_map, use_container_width=True)
+
+st.markdown("""
+**Insight:**
+- Sebaran pelanggan terkonsentrasi di wilayah perkotaan besar.
+- Wilayah tertentu menunjukkan potensi pertumbuhan.
+
+**Rekomendasi:**
+- Target promosi wilayah padat.
+- Eksplorasi wilayah dengan penetrasi rendah.
+""")
+
+# --- 6. Business Recommendations ---
+st.subheader("🧠 Rekomendasi Strategis")
+st.markdown("""
+Berdasarkan keseluruhan insight:
+
+1. **Ongkos Kirim:** Subsidi ongkir atau pembulatan biaya untuk mendorong review positif.
+2. **Cicilan:** Tambahkan opsi cicilan 3-6 bulan untuk segmen menengah.
+3. **Deskripsi Produk:** Panjang dan detail deskripsi memiliki dampak positif terhadap review.
+4. **Keterlambatan:** Perbaikan estimasi pengiriman, atau sistem kompensasi.
+5. **Pasar Baru:** Promosi khusus untuk wilayah dengan penetrasi rendah namun padat penduduk.
+
+Semua strategi ini bertujuan untuk **meningkatkan kepuasan, memperluas pasar**, dan **menaikkan konversi penjualan**.
+""")
+
+# --- Visualisasi Insight Bisnis Utama ---
+st.markdown("""
+### Visualisasi Insight Bisnis Utama
+""")
+
+# 1. Top Kategori Produk Berdasarkan Penjualan (⬆️ Meningkatkan penjualan)
+st.markdown("""
+**Insight:** Kategori produk dengan total penjualan tertinggi menunjukkan fokus utama bisnis dan peluang promosi.
+""")
+top_cat_sales = df.groupby("product_category_name_english")["price"].sum().sort_values(ascending=False).head(10)
+top_cat_sales_df = top_cat_sales.reset_index().sort_values("price")
+fig_top_cat = px.bar(
+    top_cat_sales_df,
+    x="price",
+    y="product_category_name_english",
+    orientation='h',
+    labels={'price': 'Total Penjualan (R$)', 'product_category_name_english': 'Kategori Produk'},
+    title="Top 10 Kategori Produk Berdasarkan Penjualan",
+    text_auto=True,
+    hover_data={"price": True, "product_category_name_english": True}
+)
+fig_top_cat.update_traces(marker_color='royalblue', hovertemplate='%{y}: %{x}<extra></extra>')
+st.plotly_chart(fig_top_cat, use_container_width=True)
+st.caption("Kategori produk dengan total penjualan tertinggi menunjukkan fokus utama bisnis dan peluang promosi.")
+st.markdown("""
+**Solusi:** Fokuskan promosi, bundling, dan stok pada kategori produk teratas untuk memaksimalkan penjualan dan ROI. Evaluasi kategori terbawah untuk efisiensi portofolio produk.
+""")
+
+# 2. Distribusi Metode Pembayaran (⬆️ Meningkatkan penjualan, 💡 Preferensi pembeli)
+st.markdown("""
+**Insight:** Metode pembayaran yang paling sering digunakan dapat menjadi acuan strategi promosi pembayaran/cicilan.
+""")
+payments = load_data("order_payments_dataset.csv")
+pay_type = payments["payment_type"].value_counts().reset_index()
+pay_type.columns = ["payment_type", "count"]
+fig_pay_type = px.bar(
+    pay_type,
+    x="payment_type",
+    y="count",
+    color="payment_type",
+    title="Distribusi Metode Pembayaran",
+    labels={"count": "Jumlah Transaksi", "payment_type": "Metode Pembayaran"},
+    text_auto=True
+)
+st.plotly_chart(fig_pay_type, use_container_width=True)
+st.caption("Metode pembayaran yang paling sering digunakan dapat menjadi acuan strategi promosi pembayaran/cicilan.")
+st.markdown("""
+**Solusi:** Tawarkan promo khusus pada metode pembayaran favorit dan edukasi pelanggan tentang opsi cicilan untuk meningkatkan konversi.
+""")
+
+# 3. Boxplot Review Score vs Ongkir (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
+st.markdown("""
+**Insight:** Ongkir tinggi cenderung berasosiasi dengan review lebih rendah, penting untuk strategi subsidi ongkir.
+""")
+fig_review_freight = px.box(
+    df,
+    x="review_score",
+    y="freight_value",
+    color="review_score",
+    category_orders={"review_score": [1,2,3,4,5]},
+    title="Distribusi Ongkir per Skor Review",
+    labels={"review_score": "Skor Review", "freight_value": "Ongkir (R$)"},
+    points="outliers"
+)
+st.plotly_chart(fig_review_freight, use_container_width=True)
+st.caption("Ongkir tinggi cenderung berasosiasi dengan review lebih rendah, penting untuk strategi subsidi ongkir.")
+st.markdown("""
+**Solusi:** Terapkan subsidi ongkir atau promo gratis ongkir pada segmen sensitif harga untuk meningkatkan kepuasan dan review positif.
+""")
+
+# 4. Boxplot Review Score vs Delay (😊 Kepuasan pelanggan, 🚚 Kinerja pengiriman)
+st.markdown("""
+>>>>>>> 4adaba4 (Update: analisis order telat + review bagus, normalisasi delay, visualisasi insight bisnis utama, dan perbaikan minor)
 **Insight:** Keterlambatan pengiriman berdampak signifikan pada review buruk, perlu perbaikan logistik.
 """)
 fig_review_delay = px.box(
